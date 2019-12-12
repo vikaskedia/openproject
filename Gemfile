@@ -163,7 +163,7 @@ gem 'sprockets', '~> 3.7.0'
 # also, better than thin since we can control worker concurrency.
 gem 'unicorn'
 
-gem 'puma', '~> 4.2.0' # used for development and optionally for production
+gem 'puma', '~> 4.3.0' # used for development and optionally for production
 
 gem 'nokogiri', '~> 1.10.5'
 
@@ -234,6 +234,8 @@ group :ldap do
 end
 
 group :development do
+  gem 'listen', '~> 3.2.1' # Use for event-based reloaders
+
   gem 'faker'
   gem 'letter_opener'
   gem 'livingstyleguide', '~> 2.1.0'
