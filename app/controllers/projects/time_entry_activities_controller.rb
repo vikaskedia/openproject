@@ -28,28 +28,22 @@
 # See doc/COPYRIGHT.rdoc for more details.
 #++
 
-class ProjectEnumerationsController < ApplicationController
+class Projects::TimeEntryActivitiesController < ApplicationController
   before_action :find_project_by_project_id
   before_action :authorize
 
   def update
-    if permitted_params.enumerations.present?
-      Project.transaction do
-        permitted_params.enumerations.each do |id, activity|
-          @project.update_or_create_time_entry_activity(id, activity)
-        end
-      end
-      flash[:notice] = l(:notice_successful_update)
-    end
+    TimeEntryActivitiesProject.upsert_all(update_params, unique_by: %i[project_id activity_id])
+    flash[:notice] = l(:notice_successful_update)
 
     redirect_to settings_project_path(id: @project, tab: 'activities')
   end
 
-  def destroy
-    TimeEntryActivity.bulk_destroy(@project.time_entry_activities)
+  private
 
-    flash[:notice] = l(:notice_successful_update)
-
-    redirect_to settings_project_path(id: @project, tab: 'activities')
+  def update_params
+    permitted_params.time_entry_activities_project.map do |attributes|
+      { project_id: @project.id, active: false }.with_indifferent_access.merge(attributes.to_h)
+    end
   end
 end
