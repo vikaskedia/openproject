@@ -476,8 +476,11 @@ en:
           required: "required by"
 
     time_entry:
+      project: 'Project'
+      work_package: 'Work package'
       activity: 'Activity'
       comment: 'Comment'
+      duration: 'Duration'
       hours: 'Hours'
 
     watchers:

@@ -17,6 +17,7 @@ import {FilterOperator} from "core-components/api/api-v3/api-v3-filter-builder";
 import {TimeEntryResource} from "core-app/modules/hal/resources/time-entry-resource";
 import {TimezoneService} from "core-components/datetime/timezone.service";
 import {CollectionResource} from "core-app/modules/hal/resources/collection-resource";
+import {WorkPackageResource} from "core-app/modules/hal/resources/work-package-resource";
 
 interface CalendarViewEvent {
   el:HTMLElement;
@@ -28,7 +29,7 @@ interface CalendarViewEvent {
   templateUrl: './te-calendar.template.html',
   selector: 'te-calendar',
 })
-export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
+export class TimeEntryCalendarComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild(FullCalendarComponent, { static: false }) ucCalendar:FullCalendarComponent;
   @Input() projectIdentifier:string;
   @Input() static:boolean = false;
@@ -67,6 +68,12 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
     // nothing to do
   }
 
+  ngAfterViewInit() {
+    // The full-calendar component's outputs do not seem to work
+    // see: https://github.com/fullcalendar/fullcalendar-angular/issues/228#issuecomment-523505044
+    // Therefore, setting the outputs via the underlying API
+    this.ucCalendar.getApi().setOption('eventRender', (event:CalendarViewEvent) => { this.addTooltip(event); });
+  }
 
   public calendarEventsFunction(fetchInfo:{ start:Date, end:Date, timeZone:string },
                                 successCallback:(events:EventInput[]) => void,
@@ -107,15 +114,6 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected entryName(entry:TimeEntryResource) {
-    let name = entry.project.name;
-    if (entry.workPackage) {
-      name +=  ` - #${entry.workPackage.idFromLink}: ${entry.workPackage.name}`;
-    }
-
-    return name;
-  }
-
   protected dmFilters(fetchInfo:{ start:Date, end:Date, timeZone:string }):Array<[string, FilterOperator, string[]]> {
     let startDate = moment(fetchInfo.start).format('YYYY-MM-DD');
     let endDate = moment(fetchInfo.end).subtract(1, 'd').format('YYYY-MM-DD');
@@ -153,5 +151,57 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
 
   private get calendarElement() {
     return jQuery(this.element.nativeElement).find('.fc-view-container');
+  }
+
+  private addTooltip(event:CalendarViewEvent) {
+    jQuery(event.el).tooltip({
+      content: this.tooltipContentString(event.event.extendedProps.entry),
+      items: '.fc-event',
+      close: function () { jQuery(".ui-helper-hidden-accessible").remove(); },
+      track: true
+    });
+  }
+
+  private entryName(entry:TimeEntryResource) {
+    let name = entry.project.name;
+    if (entry.workPackage) {
+      name +=  ` - ${this.workPackageName(entry)}`;
+    }
+
+    return this.sanitizedValue(name) || '-';
+  }
+
+  private workPackageName(entry:TimeEntryResource) {
+    return `#${entry.workPackage.idFromLink}: ${entry.workPackage.name}`;
+  }
+
+  private tooltipContentString(entry:TimeEntryResource) {
+    return `
+        <ul class="tooltip--map">
+          <li class="tooltip--map--item">
+            <span class="tooltip--map--key">${this.i18n.t('js.time_entry.project')}:</span>
+            <span class="tooltip--map--value">${this.sanitizedValue(entry.project.name)}</span>
+          </li>
+          <li class="tooltip--map--item">
+            <span class="tooltip--map--key">${this.i18n.t('js.time_entry.work_package')}:</span>
+            <span class="tooltip--map--value">${entry.workPackage ? this.sanitizedValue(this.workPackageName(entry)) : this.i18n.t('js.placeholders.default')}</span>
+          </li>
+          <li class="tooltip--map--item">
+            <span class="tooltip--map--key">${this.i18n.t('js.time_entry.activity')}:</span>
+            <span class="tooltip--map--value">${this.sanitizedValue(entry.activity.name)}</span>
+          </li>
+          <li class="tooltip--map--item">
+            <span class="tooltip--map--key">${this.i18n.t('js.time_entry.duration')}:</span>
+            <span class="tooltip--map--value">${this.timezone.formattedDuration(entry.hours)}</span>
+          </li>
+          <li class="tooltip--map--item">
+            <span class="tooltip--map--key">${this.i18n.t('js.time_entry.comment')}:</span>
+            <span class="tooltip--map--value">${entry.comment.html || this.i18n.t('js.placeholders.default')}</span>
+          </li>
+        `;
+  }
+
+  private sanitizedValue(value:string) {
+    return this.sanitizer.sanitize(SecurityContext.HTML, value);
   }
 }

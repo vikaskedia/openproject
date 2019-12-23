@@ -125,6 +125,21 @@ describe 'My page time entries current user widget spec', type: :feature, js: tr
     expect(page)
       .to have_selector('.fc-event .fc-title', text: "#{project.name} - ##{work_package.id}: #{work_package.subject}")
 
+    # go to today again
+    within entries_area.area do
+      find('.fc-toolbar .fc-today-button').click
+    end
+
+    expect(page)
+      .to have_content "Total: 5.00"
+
+    within entries_area.area do
+      find(".fc-content-skeleton td:nth-of-type(#{Date.today.wday + 1}) .fc-event-container .fc-event").hover
+    end
+
+    expect(page)
+      .to have_selector('.ui-tooltip', text: "Project: #{project.name}")
+
     entries_area.remove
 
     # as the last widget has been removed, the add button is always displayed
