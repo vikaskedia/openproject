@@ -36,7 +36,11 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
 
   public calendarPlugins = [timeGrid];
   public calendarEvents:Function;
-  public calendarHeader:ToolbarInput|boolean = false;
+  public calendarHeader:ToolbarInput|boolean = {
+    right: '',
+    center: 'title',
+    left: 'prev,next today'
+  };
   public calendarSlotLabelFormat = {
     hour: 'numeric',
     minute: '2-digit',
@@ -96,7 +100,7 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
       hoursDistribution[entry.spentOn] = end;
 
       return {
-        title: entry.workPackage && entry.workPackage.name || entry.project.name,
+        title: this.entryName(entry),
         start: start.format(),
         end: end.format(),
         entry: entry
@@ -104,9 +108,18 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
     });
   }
 
+  protected entryName(entry:TimeEntryResource) {
+    let name = entry.project.name;
+    if (entry.workPackage) {
+      name +=  ` - #${entry.workPackage.idFromLink}: ${entry.workPackage.name}`;
+    }
+
+    return name;
+  }
+
   protected dmFilters(fetchInfo:{ start:Date, end:Date, timeZone:string }):Array<[string, FilterOperator, string[]]> {
     let startDate = moment(fetchInfo.start).format('YYYY-MM-DD');
-    let endDate = moment(fetchInfo.end).format('YYYY-MM-DD');
+    let endDate = moment(fetchInfo.end).subtract(1, 'd').format('YYYY-MM-DD');
     return [['spentOn', '<>d', [startDate, endDate]] as [string, FilterOperator, string[]],
       ['user_id', '=', ['me']] as [string, FilterOperator, [string]]];
   }
