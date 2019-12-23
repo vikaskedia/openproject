@@ -17,7 +17,6 @@ import {FilterOperator} from "core-components/api/api-v3/api-v3-filter-builder";
 import {TimeEntryResource} from "core-app/modules/hal/resources/time-entry-resource";
 import {TimezoneService} from "core-components/datetime/timezone.service";
 import {CollectionResource} from "core-app/modules/hal/resources/collection-resource";
-import {WorkPackageResource} from "core-app/modules/hal/resources/work-package-resource";
 
 interface CalendarViewEvent {
   el:HTMLElement;
@@ -42,13 +41,12 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy, AfterViewI
     center: 'title',
     left: 'prev,next today'
   };
-  public calendarSlotLabelFormat = (info:any) => {
-    return 24 - info.date.hour;
-  }
+  public calendarSlotLabelFormat = (info:any) => 24 - info.date.hour;
   public calendarScrollTime = '24:00:00';
   public calendarContentHeight = 618;
   public calendarAllDaySlot = false;
   public calendarDisplayEventTime = false;
+  public calendarSlotEventOverlap = false;
 
   constructor(readonly states:States,
               readonly timeEntryDm:TimeEntryDmService,
