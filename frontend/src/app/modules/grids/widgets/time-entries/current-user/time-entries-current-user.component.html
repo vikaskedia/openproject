@@ -7,9 +7,11 @@
   </widget-menu>
 </widget-header>
 
-<te-calendar></te-calendar>
+<te-calendar
+  (entries)="updateEntries($event)"
+></te-calendar>
 
-<ng-container *ngIf="!noEntries">
+<ng-container>
   <div class="total-hours">
     <p>Total: <span [textContent]="total"></span></p>
   </div>

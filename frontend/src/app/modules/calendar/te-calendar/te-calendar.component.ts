@@ -1,4 +1,4 @@
-import {Component, ElementRef, Input, OnDestroy, OnInit, SecurityContext, ViewChild, AfterViewInit} from "@angular/core";
+import {Component, ElementRef, Input, OnDestroy, OnInit, SecurityContext, ViewChild, AfterViewInit, Output, EventEmitter} from "@angular/core";
 import {FullCalendarComponent} from '@fullcalendar/angular';
 import {States} from "core-components/states.service";
 import * as moment from "moment";
@@ -16,6 +16,7 @@ import {TimeEntryDmService} from "core-app/modules/hal/dm-services/time-entry-dm
 import {FilterOperator} from "core-components/api/api-v3/api-v3-filter-builder";
 import {TimeEntryResource} from "core-app/modules/hal/resources/time-entry-resource";
 import {TimezoneService} from "core-components/datetime/timezone.service";
+import {CollectionResource} from "core-app/modules/hal/resources/collection-resource";
 
 interface CalendarViewEvent {
   el:HTMLElement;
@@ -31,6 +32,7 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
   @ViewChild(FullCalendarComponent, { static: false }) ucCalendar:FullCalendarComponent;
   @Input() projectIdentifier:string;
   @Input() static:boolean = false;
+  @Output() entries = new EventEmitter<CollectionResource<TimeEntryResource>>();
 
   public calendarPlugins = [timeGrid];
   public calendarEvents:Function;
@@ -68,8 +70,9 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
                                 successCallback:(events:EventInput[]) => void,
                                 failureCallback:(error:EventSourceError) => void ):void | PromiseLike<EventInput[]> {
 
-    this.timeEntryDm.list({ filters: this.dmFilters() })
+    this.timeEntryDm.list({ filters: this.dmFilters(fetchInfo) })
       .then((collection) => {
+        this.entries.emit(collection);
         successCallback(this.buildEntries(collection.elements));
       });
   }
@@ -101,8 +104,10 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected dmFilters():Array<[string, FilterOperator, [string]]> {
-    return [['spentOn', '>t-', ['7']] as [string, FilterOperator, [string]],
+  protected dmFilters(fetchInfo:{ start:Date, end:Date, timeZone:string }):Array<[string, FilterOperator, string[]]> {
+    let startDate = moment(fetchInfo.start).format('YYYY-MM-DD');
+    let endDate = moment(fetchInfo.end).format('YYYY-MM-DD');
+    return [['spentOn', '<>d', [startDate, endDate]] as [string, FilterOperator, string[]],
       ['user_id', '=', ['me']] as [string, FilterOperator, [string]]];
   }
 
