@@ -41,12 +41,10 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
     center: 'title',
     left: 'prev,next today'
   };
-  public calendarSlotLabelFormat = {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: false
-  };
-  public calendarScrollTime = '00:00:00';
+  public calendarSlotLabelFormat = (info:any) => {
+    return 24 - info.date.hour;
+  }
+  public calendarScrollTime = '24:00:00';
   public calendarContentHeight = 618;
   public calendarAllDaySlot = false;
   public calendarDisplayEventTime = false;
@@ -88,16 +86,17 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy {
 
     return entries.map((entry) => {
       let start:Moment;
+      let end:Moment;
 
       if (hoursDistribution[entry.spentOn]) {
-        start = hoursDistribution[entry.spentOn];
+        start = hoursDistribution[entry.spentOn].clone().subtract(this.timezone.toHours(entry.hours), 'h');
+        end = hoursDistribution[entry.spentOn].clone();
       } else {
-        start = moment(entry.spentOn);
+        start = moment(entry.spentOn).add(24 - this.timezone.toHours(entry.hours), 'h');
+        end = moment(entry.spentOn).add(24, 'h');
       }
 
-      let end = start.clone().add(this.timezone.toHours(entry.hours), 'h');
-
-      hoursDistribution[entry.spentOn] = end;
+      hoursDistribution[entry.spentOn] = start;
 
       return {
         title: this.entryName(entry),
