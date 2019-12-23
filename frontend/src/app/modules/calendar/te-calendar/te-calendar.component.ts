@@ -94,19 +94,20 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy, AfterViewI
     return entries.map((entry) => {
       let start:Moment;
       let end:Moment;
+      let hours = this.timezone.toHours(entry.hours);
 
       if (hoursDistribution[entry.spentOn]) {
-        start = hoursDistribution[entry.spentOn].clone().subtract(this.timezone.toHours(entry.hours), 'h');
+        start = hoursDistribution[entry.spentOn].clone().subtract(hours, 'h');
         end = hoursDistribution[entry.spentOn].clone();
       } else {
-        start = moment(entry.spentOn).add(24 - this.timezone.toHours(entry.hours), 'h');
+        start = moment(entry.spentOn).add(24 - hours, 'h');
         end = moment(entry.spentOn).add(24, 'h');
       }
 
       hoursDistribution[entry.spentOn] = start;
 
       return {
-        title: this.entryName(entry),
+        title: hours < 0.5 ? '' : this.entryName(entry),
         start: start.format(),
         end: end.format(),
         entry: entry
@@ -118,7 +119,7 @@ export class TimeEntryCalendarComponent implements OnInit, OnDestroy, AfterViewI
     let startDate = moment(fetchInfo.start).format('YYYY-MM-DD');
     let endDate = moment(fetchInfo.end).subtract(1, 'd').format('YYYY-MM-DD');
     return [['spentOn', '<>d', [startDate, endDate]] as [string, FilterOperator, string[]],
-      ['user_id', '=', ['me']] as [string, FilterOperator, [string]]];
+           ['user_id', '=', ['me']] as [string, FilterOperator, [string]]];
   }
 
   private initializeCalendar() {
